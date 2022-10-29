@@ -76,6 +76,10 @@ export default {
         web3.thk.setVal(value + '');
         const myContract = web3.thk.contract(abi).at(contractAddress, null);
         const result = await myContract.transfer('0x7746943934c724621d01bCF3621b84576B460e4c', '1000000000000000000');
+    },
+    verify(hash, sig, pubKey){
+        const web3 = new Web3();
+        return web3.thk.verify(hash, sig, pubKey)
     }
 
 }

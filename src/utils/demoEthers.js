@@ -19,7 +19,35 @@ let rpc;
 const privateKey = '0xadb8bbdb1ea56ced2acfd98c76af1fb1ab65d32b5864b6373f0ccfc653193448'  //zla-2
 
 
-export function setRpc(data){
+export  async function connectMetaMask() {
+    console.log('--connectMetaMask');
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner()
+    // let address = await signer.getAddress();
+    // console.log('---address', address);
+
+    // let obj = {
+    //     to: '0x97239296AC6f4297F25Adfce6EEfE399448C1B33',
+    //     value: utils.parseEther('1'),
+    //     // gasPrice: utils.bigNumberify("20000000000"),
+    //     // chainId: ethers.util.getNetwork('homestead').chainId
+    // }
+
+    // const result = await signer.sendTransaction(obj);
+    // console.log('--result', result);
+
+    return signer;
+}
+
+
+export async function createSingerByPrivateKey(){
+
+}
+
+
+
+export function setRpc(data) {
     rpc = data;
     console.log('---rpc', rpc);
 }
@@ -78,6 +106,7 @@ export async function sendTransaction({ privateKey, to, value, gasLimit = 21000 
         // gasPrice: utils.bigNumberify("20000000000"),
         // chainId: ethers.util.getNetwork('homestead').chainId
     }
+    console.log('---obj', obj)
     let provider = new ethers.providers.JsonRpcProvider(rpc)
     const wallet = new ethers.Wallet(privateKey, provider)
     const result = await wallet.sendTransaction(obj);
@@ -139,6 +168,7 @@ export async function signMessage(message, privateKey) {
     const result = await wallet.signMessage(message)
     return result;
 }
+
 
 
 

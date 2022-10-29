@@ -112,6 +112,11 @@ function PageEthers() {
     const [retrieveValue, setTransRetrieveValue] = React.useState('');
     const [stringToBeSigned, setStringToBeSigned] = React.useState('');
 
+    const connectMetaMask = () => {
+        demoEthers.connectMetaMask()
+        
+    }
+
 
     const onRpcChange = (value) => {
         const rpcData = rpcList.find(item => item.key === value);
@@ -216,13 +221,13 @@ function PageEthers() {
             width: '600px',
             content: (
                 <pre>
-                   {contractCode}
+                    {contractCode}
                 </pre>
             ),
             onOk() {
-              console.log('OK');
+                console.log('OK');
             },
-          })
+        })
     }
 
     return (
@@ -234,6 +239,9 @@ function PageEthers() {
                     wrapperCol={{ span: 14 }}
                     layout="horizontal"
                 >
+                    <Form.Item label="Connect" name="_privateKey">
+                        <Button onClick={() => { connectMetaMask() }}>Connect to MetaMask</Button>
+                    </Form.Item>
                     <Form.Item label="rpc" name="chain">
                         <Select style={{ width: 600 }} onChange={onRpcChange} defaultValue={deFaultRpcKey}>
                             {
@@ -280,7 +288,7 @@ function PageEthers() {
                             <Button onClick={checkContractCode}>Contract code</Button>
                         </Space>
                         <Input placeholder="Contract address" style={{ width: 600, marginBottom: 20 }} onChange={(e) => { setTransContractAddress(e.target.value.trim()) }} />
-                        
+
 
                         <Input placeholder="Amount" style={{ width: 200, marginRight: 20 }} onChange={(e) => { setTransStoreValue(e.target.value.trim() - 0) }} />
                         <Button onClick={callContractSet2}>Call contract set</Button>

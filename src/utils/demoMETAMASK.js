@@ -18,7 +18,7 @@ export async function init() {
         const accounts = await ethereum.enable();
         let provider = window['ethereum'] || window.web3.currentProvider
         window.web3 = new Web3(provider)
-        window.defaultAccount = accounts[0].toLowerCase();
+        window.defaultAccount = accounts[0];
         return { address: window.defaultAccount };
     } catch (err) {
         console.log('---err', err);
@@ -32,7 +32,12 @@ export async function getAddress() { // 可以直接用 window.defaultAccount
     }
     const accounts = await window.web3.eth.getAccounts();
     const myAccount = accounts[0] || '';
-    return myAccount.toLowerCase();
+    return myAccount;
+}
+
+export async function getChainId(){
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    return chainId
 }
 
 
@@ -105,8 +110,8 @@ export function deployContract({ bytecode, abi, from = window.defaultAccount, ga
 }
 
 
-export function getMyContract({ abi, contractAddress }) {
-    return new window.web3.eth.Contract(abi, contractAddress);
+export function getMyContract({ abi, contractAddress, override }) {
+    return new window.web3.eth.Contract(abi, contractAddress, override);
 }
 
 
@@ -117,17 +122,32 @@ export function getPendingTransactions() {
 }
 
 
-export async function signMessage(message) {  // This method may have been cancelled on metaMask
-    const result = await window.web3.eth.sign(message, window.defaultAccount,)
-    return result;
+export async function signMessage(message) {
+    return window.web3.eth.sign(message, window.defaultAccount,)
 }
 
 
 export async function signPersonalMessage(message) {
-    const result = await window.web3.eth.personal.sign(message, window.defaultAccount,)
-    return result;
+    return window.web3.eth.personal.sign(message, window.defaultAccount,)
 }
 
+
+
+export async function verifySignatureRPL(message, sig) {
+    return window.web3.eth.accounts.recover(message, sig);
+}
+
+export async function verifySignatureVRS(message, sig) {
+    let r = sig.slice(0, 66)
+    let s = '0x' + sig.slice(66, 130)
+    let v = '0x' + sig.slice(130, 132)
+
+    return window.web3.eth.accounts.recover(message, v, r, s);
+}
+
+export function recoverTransaction(sig){
+    return window.web3.eth.accounts.recoverTransaction(sig);
+}
 
 
 

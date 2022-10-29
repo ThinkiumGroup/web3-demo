@@ -1,7 +1,8 @@
 
 import React, { useEffect } from 'react';
-import { Form, Button, Radio, Input, Select , Space, Modal  } from 'antd';
+import { Form, Button, Radio, Input, Select, Space, Modal } from 'antd';
 import { BigNumber } from 'bignumber.js';
+import AOP from '../../assets/aop'
 
 import * as demoMETAMASK from '../../utils/demoMETAMASK';
 const contractCode = `
@@ -80,6 +81,7 @@ function PageMetaMask() {
     const [storeValue, setTransStoreValue] = React.useState('');
     const [retrieveValue, setTransRetrieveValue] = React.useState('');
     const [stringToBeSigned, setStringToBeSigned] = React.useState('');
+    const [signature, setSignature] = React.useState('');
 
 
     useEffect(() => {
@@ -164,41 +166,85 @@ function PageMetaMask() {
         }
     }
 
+    function setLog({ key, name = '', data }) {
+        let storageKey = '_callContract';
+        console.log('---setLog', { name, data });
+        try {
+            let logs = JSON.parse(localStorage.getItem(storageKey)) || [];
+            logs.push({
+                [key]: {
+                    time: new Date().toLocaleString(),
+                    name,
+                    data,
+                }
+            })
+            localStorage.setItem(storageKey, JSON.stringify(logs));
+        } catch (err) {
+            console.log('---err--setLog', err);
+        }
+    }
+
+    async function beforeCall(...args) {
+        console.log('----this--beforeCall', this);
+        setLog({ key: 'params', data: args });
+    }
+
+    async function afterCall(result) {
+        console.log('--aop-after', result);
+        let { name, stateMutability } = result._method;
+        console.log('---stateMutability', stateMutability);
+        if ('view' == stateMutability) {
+            let res = await result.call();
+            setLog({ key: 'result', name, data: res })
+            return res;
+        } else if (['payable', 'nonpayable'].includes(stateMutability)) {
+            // let res = result.send();
+            return result
+        }
+        return result;
+    }
+
     async function callContractGet() {
         let params = {
             abi,
-            contractAddress
+            contractAddress,
+            override: { from: window.defaultAccount, value: '0x0' }
         }
         const myContract = demoMETAMASK.getMyContract(params);
-        myContract.methods.retrieve().call({ from: window.defaultAccount, value: '0x0' }).then((res) => {
-            setTransRetrieveValue(res.toString());
-        }).catch((err) => {
-            alert(`Error when calling contract method:${err}`)
-        })
+        AOP.inject(myContract.methods, afterCall, 'afterReturning', "methods")
+        console.log('---myContract', myContract)
+        let res = await myContract.methods.retrieve();
+        console.log('---res--callContractGet', res);
+        setTransRetrieveValue(res.toString())
     }
+
+
 
     async function callContractSet() {
         let params = {
             abi,
-            contractAddress
+            contractAddress,
+            override: { from: window.defaultAccount, gasLimit: 1000000, }
         }
         const myContract = demoMETAMASK.getMyContract(params);
-        myContract.methods.store(storeValue).send({ from: window.defaultAccount, gasLimit: 1000000, })
+        console.log('---myContract.methods', myContract.methods);
+
+        // AOP.inject(myContract.methods, beforeCall, 'before', "methods");
+        // AOP.inject(myContract.methods, afterCall, 'afterReturning', "methods");
+        // myContract.methods.store(storeValue).send()
+        console.log('---12type', typeof myContract.methods.store(storeValue));
+        myContract.methods.store(storeValue).send()
             .on('transactionHash', function (transactionHash) {
                 console.log('transactionHash', transactionHash)
                 alert('Call the contract method hash:' + JSON.stringify(transactionHash))
+            }).on('receipt', function (receipt) {
+               
+            }).then(res => {
+                console.log('--结果是', res);
+            }).catch(err => {
+                console.log('--err是', err);
             })
-            .on('confirmation', function (confirmationNumber, receipt) {
-                console.log('confirmation', { confirmationNumber: confirmationNumber, receipt: receipt })
-            })
-            .on('receipt', function (receipt) {
-                console.log('receipt', { receipt: receipt })
-                alert('receipt: ' + JSON.stringify(receipt))
-            })
-            .on('error', function (error, receipt) {
-                alert('error:' + JSON.stringify(error))
-                console.log('error', { error: error, receipt: receipt })
-            })
+        // console.log('----res结果', res);
     }
 
     async function signMessage() {
@@ -208,7 +254,18 @@ function PageMetaMask() {
 
     async function signPersonalMessage() {
         const result = await demoMETAMASK.signPersonalMessage(stringToBeSigned);
+        setSignature(result)
         alert('signPersonalMessage signature result is：' + result);
+    }
+
+    async function verifySignatureRPL() {
+        const result = await demoMETAMASK.verifySignatureRPL(stringToBeSigned, signature);
+        alert('RPL,The signature address is：' + result);
+    }
+
+    async function verifySignatureVRS() {
+        const result = await demoMETAMASK.verifySignatureVRS(stringToBeSigned, signature);
+        alert('VRS, The signature address is：' + result);
     }
 
     function checkContractCode() {
@@ -218,13 +275,13 @@ function PageMetaMask() {
             width: '600px',
             content: (
                 <pre>
-                   {contractCode}
+                    {contractCode}
                 </pre>
             ),
             onOk() {
-              console.log('OK');
+                console.log('OK');
             },
-          })
+        })
     }
 
 
@@ -239,7 +296,7 @@ function PageMetaMask() {
                     layout="horizontal"
                 >
                     <Form.Item label="Browser environment" name="_privateKey">
-                        <Button onClick={checkEnvironment} style={{width: '300px'}}>Check the browser environment</Button>
+                        <Button onClick={checkEnvironment} style={{ width: '300px' }}>Check the browser environment</Button>
                     </Form.Item>
                     <Form.Item label="Connect" name="_privateKey">
                         <Button onClick={() => { initMetaMask(2) }}>Connect to MetaMask</Button>
@@ -273,20 +330,23 @@ function PageMetaMask() {
                         <Button onClick={sendTransaction} >Transfer</Button>
                     </Form.Item>
                     <Form.Item label="Hello World contract" name="_nonce">
-                        <Button onClick={deployContract} style={{  marginRight: 20 }}>Deployment contract</Button>
+                        <Button onClick={deployContract} style={{ marginRight: 20 }}>Deployment contract</Button>
                         <Space wrap>
                             <Button onClick={checkContractCode}>Contract code</Button>
                         </Space>
-                        <Input placeholder="Contract address" style={{ width: 600, marginBottom: 20 }} onChange={(e) => { setTransContractAddress(e.target.value.trim()) }} value={contractAddress}/>
+                        <Input placeholder="Contract address" style={{ width: 600, marginBottom: 20 }} onChange={(e) => { setTransContractAddress(e.target.value.trim()) }} value={contractAddress} />
                         <Input placeholder="Amount" style={{ width: 200, marginRight: 20 }} onChange={(e) => { setTransStoreValue(e.target.value.trim() - 0) }} />
                         <Button onClick={callContractSet}>Call contract set</Button>
                         <Button onClick={callContractGet} style={{ marginRight: 20 }}>Call contract get</Button>
                         <span>{retrieveValue}</span>
                     </Form.Item>
-                    <Form.Item label="Sign" name="_nonce">
+                    <Form.Item label="Sign and verify" name="_nonce">
                         <Input placeholder="Sign string" style={{ width: 600, marginRight: 20 }} onChange={(e) => { setStringToBeSigned(e.target.value.trim()) }} />
-                        <Button onClick={signMessage} >SignMessage</Button>
+                        <Button onClick={signMessage} style={{ marginRight: 20, }}>SignMessage</Button>
                         <Button onClick={signPersonalMessage} >SignPersonalMessage</Button>
+                        <Input placeholder="Signature" style={{ width: 600, marginRight: 20, marginTop: 20 }} onChange={(e) => { setSignature(e.target.value.trim()) }} value={signature} />
+                        <Button onClick={verifySignatureRPL} style={{ marginRight: 20, }}>Verify Signature RPL</Button>
+                        <Button onClick={verifySignatureVRS} >verify Signature VRS</Button>
                     </Form.Item>
 
                 </Form>

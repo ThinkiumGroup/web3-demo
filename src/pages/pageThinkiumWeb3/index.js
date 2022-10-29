@@ -63,6 +63,10 @@ function PageThinkiumWeb3() {
   const [toAddress, setToAddress] = React.useState();
   const [transferAmount, setTransferAmount] = React.useState();
 
+  const [hashToVerify, setSashToVerify] = React.useState();
+  const [signatureToVerify, setSignatureToVerify] = React.useState();
+  const [publicKeyToVerify, setPublicKeyToVerify] = React.useState();
+
   useEffect(() => {
 
   })
@@ -137,6 +141,11 @@ function PageThinkiumWeb3() {
     }
   }
 
+  function Verify(){
+    console.log(hashToVerify, signatureToVerify, publicKeyToVerify)
+    const result = walletApi.verify(hashToVerify, signatureToVerify, publicKeyToVerify)
+  }
+
 
 
   return (
@@ -194,6 +203,14 @@ function PageThinkiumWeb3() {
           <Form.Item label="Transfer" >
             <Button onClick={toCrossChainTransfer} >Transfer</Button>
           </Form.Item>
+
+          <Form.Item label="Verify" >
+            <Input placeholder="hash" style={{ width: 600, marginRight: 20 }} onChange={(e) => { setSashToVerify(e.target.value.trim()) }} />
+            <Input placeholder="Signature" style={{ width: 600, marginRight: 20, marginTop: 20 }} onChange={(e) => { setSignatureToVerify(e.target.value.trim()) }} />
+            <Input placeholder="Public key" style={{ width: 600, marginRight: 20, marginTop: 20 }} onChange={(e) => { setPublicKeyToVerify(e.target.value.trim()) }} />
+            <Button onClick={Verify} >Verify</Button>
+          </Form.Item>
+
         </Form>
       </div>
     </div>
