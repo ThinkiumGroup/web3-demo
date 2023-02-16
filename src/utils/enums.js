@@ -26,7 +26,8 @@ export const chainBasicInfoPro = {
     thk: {
         name: '',
         rpc: 'https://proxy.thinkiumrpc.net'
-    }
+    },
+
 }
 
 export const chainBasicInfoDev = {
@@ -56,7 +57,13 @@ export const chainBasicInfoDev = {
     thk: {
         name: '',
         rpc: 'http://test.thinkiumrpc.net'
-    }
+    },
+    1337: {
+        name: '1337',
+        chainIdOriginal: '1337',
+        chainId: '1337',
+        rpc: 'https://eth-node.chainopen.cn'
+    },
 }
 
 

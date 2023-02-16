@@ -4,6 +4,7 @@ import { BigNumber } from 'bignumber.js';
 import { Form, Button, Radio, Input, Select, Space, Modal } from 'antd';
 import { getChainIdEnum, getRpcUrl, chainBasicInfoPro, chainBasicInfoDev } from '../../utils/enums';
 import * as demoEthers from '../../utils/demoEthers';
+import * as demoMETAMASK from "../../utils/demoMETAMASK";
 
 const { Option } = Select
 
@@ -185,6 +186,16 @@ function PageEthers() {
         alert(`Transfer address: ${transferToAddress} \n amount: ${transferValue} \n Transaction result: ${JSON.stringify(result)}`);
     }
 
+    async function deployContract() {
+        try {
+            const result = await demoEthers.deployContract({ bytecode, abi });
+            setTransContractAddress(result.address);
+            alert(`The contract is deployed successfully, the contract address: ${result.address}`);
+        } catch (err) {
+            alert(`Contract deployment failed, failure message: ${err}`);
+        }
+    }
+
 
     async function callContractSet2() {
         let params = {
@@ -284,11 +295,11 @@ function PageEthers() {
                         <Button onClick={sendTransaction2} >Transfer</Button>
                     </Form.Item>
                     <Form.Item label="Hello World contract" name="_nonce">
+                        <Button onClick={deployContract} style={{ marginRight: 20 }}>Deployment contract</Button>
                         <Space wrap>
                             <Button onClick={checkContractCode}>Contract code</Button>
                         </Space>
-                        <Input placeholder="Contract address" style={{ width: 600, marginBottom: 20 }} onChange={(e) => { setTransContractAddress(e.target.value.trim()) }} />
-
+                        <Input placeholder="Contract address" style={{ width: 600, marginBottom: 20 }} onChange={(e) => { setTransContractAddress(e.target.value.trim()) }} value={contractAddress}/>
 
                         <Input placeholder="Amount" style={{ width: 200, marginRight: 20 }} onChange={(e) => { setTransStoreValue(e.target.value.trim() - 0) }} />
                         <Button onClick={callContractSet2}>Call contract set</Button>
